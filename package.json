@@ -1,9 +1,22 @@
 {
   "name": "color-palette-generator",
-  "productName": "color-palette-generator",
+  "productName": "Color Palette Generator",
   "version": "1.0.0",
   "description": "My Electron application description",
   "main": "src/index.js",
+  "build": {
+    "appId": "com.color-palette-generator.desktop",
+    "productName": "Color Palette Generator",
+    "copyright": "© 2025 Fırat Tuna Arslan",
+    "win": {
+      "target": "nsis",
+      "icon": "icon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "icon.icns"
+    }
+  },
   "scripts": {
     "start": "electron-forge start",
     "package": "electron-forge package",
@@ -14,10 +27,11 @@
   "keywords": [],
   "author": {
     "name": "Fırat Tuna Arslan",
-    "email": "84281538+firatmio@users.noreply.github.com"
+    "email": "firattunaarslan@gmail.com"
   },
   "license": "MIT",
   "dependencies": {
+    "@electron-forge/maker-wix": "^7.9.0",
     "electron-squirrel-startup": "^1.0.1"
   },
   "devDependencies": {
@@ -29,6 +43,15 @@
     "@electron-forge/plugin-auto-unpack-natives": "^7.9.0",
     "@electron-forge/plugin-fuses": "^7.9.0",
     "@electron/fuses": "^1.8.0",
-    "electron": "^38.1.2"
+    "electron": "^38.1.2",
+    "electron-packager": "^17.1.2"
+  },
+  "nsis": {
+    "oneClick": false,
+    "perMachine": true,
+    "allowElevation": true,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true
   }
 }
