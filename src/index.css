@@ -1,0 +1,116 @@
+:root {
+  --font-family: Arial, Helvetica, sans-serif;
+  --bottom-area-height: 60px
+}
+
+html, body, * {
+  margin: 0; padding: 0; user-select: none; -webkit-user-drag: none; outline: none;
+}
+
+::-webkit-scrollbar { width: 0; height: 0; }
+
+.palettes {
+  position: absolute;
+  top: 0; left: 0; bottom: var(--bottom-area-height); right: 0;
+  display: flex;
+  flex-direction: row;
+}
+
+.palette {
+  width: 20vw;
+  height: calc(100vh - var(--bottom-area-height));
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: background-color .3s ease;
+}
+
+.overlay {
+  background-color: rgba(0,0,0,0);
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex: 1;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  transition: background-color .3s ease;
+}
+
+.palette:hover .overlay {
+  background-color: rgba(0,0,0,.25);
+}
+
+.palette span {
+  color: rgba(255,255,255,.5);
+  font-family: var(--font-family);
+  font-weight: 525;
+  font-size: 24px;
+  letter-spacing: 1px;
+  transition: color .3s ease;
+}
+
+.palette:hover span {
+  color: white !important;
+}
+
+.control-area {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100vw;
+  height: var(--bottom-area-height);
+  background-color: #202020;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.control-area span {
+  color: rgba(255, 255, 255, .75);
+  font-family: var(--font-family);
+  margin-left: 20px;
+}
+
+.control-area span a {
+  text-decoration: none;
+  color: rgba(255, 255, 255, .75);
+  font-weight: bold;
+}
+
+.control-area span a:hover {
+  color: white;
+}
+
+.controls {
+  margin-right: 10px;
+  display: flex;
+  flex-direction: row;
+  gap: 7.5px;
+}
+
+.control-button {
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 7.5px;
+  border: 1px solid rgba(255,255,255,.1);
+  background-color: rgba(255,255,255,.1);
+  color: rgba(255, 255, 255, .75);
+  cursor: pointer;
+  transition: all .2s ease;
+  text-align: center;
+}
+
+.control-button span {
+  margin-left: 0;
+}
+
+.control-button:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, .45);
+  color: white;
+}

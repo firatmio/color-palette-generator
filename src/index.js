@@ -7,16 +7,22 @@ if (require('electron-squirrel-startup')) {
 
 const createWindow = () => {
   const mainWindow = new BrowserWindow({
-    width: 1000,
-    height: 650,
+    width: 1200,
+    height: 750,
+    minWidth: 1200,
+    minHeight: 750,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: false,
+      nodeIntegration: true,
+      enableRemoteModule: false,
     },
     autoHideMenuBar: true,
   });
 
   mainWindow.loadFile(path.join(__dirname, 'index.html'));
 
+  //mainWindow.webContents.openDevTools();
 };
 
 app.whenReady().then(() => {

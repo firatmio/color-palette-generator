@@ -1,11 +1,147 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="index.css">
   <title>Color Palette Generator</title>
+  <style>
+  </style>
 </head>
+
 <body>
-  
+  <div class="palettes">
+    <div class="palette"><div class="overlay"><span></span></div></div>
+    <div class="palette"><div class="overlay"><span></span></div></div>
+    <div class="palette"><div class="overlay"><span></span></div></div>
+    <div class="palette"><div class="overlay"><span></span></div></div>
+    <div class="palette"><div class="overlay"><span></span></div></div>
+  </div>
+  <div class="control-area">
+    <div class="info">
+      <span>
+        Created with ❤️ by <a href="https://github.com/firatmio" onclick="openExternalLink(event, 'https://github.com/firatmio')">firatmio</a>.
+      </span>
+    </div>
+    <div class="controls">
+      <button class="control-button" onclick="downloadPalette()" title="download → palette.json">
+        <span>Kullan</span>
+      </button>
+      <button class="control-button" onclick="generatePalette()" title="Generate">
+        <span>Generate</span>
+      </button>
+    </div>
+  </div>
+
+  <script>    
+    function openExternalLink(event, url) {
+      event.preventDefault();
+      try {
+        const { shell } = require('electron');
+        shell.openExternal(url);
+      } catch (error) {
+        window.open(url, '_blank');
+      }
+    }
+
+    function downloadPalette() {
+        const palettes = document.querySelectorAll('.palette');
+        const colors = Array.from(palettes).map(p => {
+          let c = p.style.background || '';
+          if (c && c.startsWith('#')) return c.toUpperCase();
+          const rgb = getComputedStyle(p).backgroundColor;
+          const m = rgb && rgb.match(/\d+/g);
+          if (!m) return '#000000';
+          const [r, g, b] = m.map(Number);
+          return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('').toUpperCase();
+        });
+        const blob = new Blob([JSON.stringify({ colors }, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'palette.json';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
+    function hslToHex(h, s, l) {
+      s /= 100; l /= 100;
+      const k = n => (n + h / 30) % 12;
+      const a = s * Math.min(l, 1 - l);
+      const f = n => {
+        const val = l - a * Math.max(Math.min(k(n) - 3, 9 - k(n), 1), -1);
+        return Math.round(255 * val).toString(16).padStart(2, '0');
+      };
+      return `#${f(0)}${f(8)}${f(4)}`.toUpperCase();
+    }
+
+    function getContrastColor(hex) {
+      hex = hex.replace("#", "");
+      const r = parseInt(hex.substr(0, 2), 16);
+      const g = parseInt(hex.substr(2, 2), 16);
+      const b = parseInt(hex.substr(4, 2), 16);
+      const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+      return luminance > 0.5 ? "#000000" : "#FFFFFF";
+    }
+
+    let paletteHistory = [];
+
+    function createPaletteColors(count) {
+      const isGray = Math.random() < 0.25;
+      const hue = isGray ? 0 : Math.floor(Math.random() * 360);
+      const baseS = isGray ? 0 : 60 + Math.floor(Math.random() * 20);
+
+      const minL = 12, maxL = 88;
+      const lightnesses = Array.from({ length: count }, (_, i) => {
+        if (count === 1) return Math.round((minL + maxL) / 2);
+        return Math.round(minL + (maxL - minL) * (i / (count - 1)));
+      });
+
+      return lightnesses.map(l => hslToHex(hue, baseS, l));
+    }
+
+    function generatePalette() {
+      const palettes = document.querySelectorAll(".palette");
+      const count = palettes.length;
+
+      let attempts = 0;
+      let colors = [];
+      let key = '';
+      const MAX_ATTEMPTS = 100;
+      do {
+        colors = createPaletteColors(count);
+        key = colors.join(',');
+        attempts++;
+      } while (paletteHistory.includes(key) && attempts < MAX_ATTEMPTS);
+
+      palettes.forEach((palette, i) => {
+        const color = colors[i];
+        const textColor = getContrastColor(color);
+        palette.style.background = color;
+        const span = palette.querySelector("span");
+        span.textContent = color;
+        span.style.color = textColor;
+
+        palette.onclick = () => {
+          navigator.clipboard.writeText(color).then(() => {
+            span.textContent = "Copied!";
+            setTimeout(() => { span.textContent = color; }, 1000);
+          });
+        };
+      });
+
+      if (!paletteHistory.includes(key)) {
+        paletteHistory.push(key);
+        if (paletteHistory.length >= 50) {
+          paletteHistory = [];
+        }
+      }
+    }
+
+    generatePalette();
+  </script>
 </body>
+
 </html>
