@@ -11,6 +11,11 @@
 </head>
 
 <body>
+  <div class="topbar">
+    <div class="topbar-center">
+      <input id="base-hex-input" class="hex-input" type="text" maxlength="7" placeholder="#RRGGBB" title="Paletin ana rengi (hex)" />
+    </div>
+  </div>
   <div class="palettes">
     <div class="palette"><div class="overlay"><span></span></div></div>
     <div class="palette"><div class="overlay"><span></span></div></div>
@@ -86,33 +91,94 @@
       return luminance > 0.5 ? "#000000" : "#FFFFFF";
     }
 
-    let paletteHistory = [];
+    // Yardımcılar
+    function clamp(v, min, max) { return Math.min(max, Math.max(min, v)); }
 
-    function createPaletteColors(count) {
-      const isGray = Math.random() < 0.25;
-      const hue = isGray ? 0 : Math.floor(Math.random() * 360);
-      const baseS = isGray ? 0 : 60 + Math.floor(Math.random() * 20);
-
-      const minL = 12, maxL = 88;
-      const lightnesses = Array.from({ length: count }, (_, i) => {
-        if (count === 1) return Math.round((minL + maxL) / 2);
-        return Math.round(minL + (maxL - minL) * (i / (count - 1)));
-      });
-
-      return lightnesses.map(l => hslToHex(hue, baseS, l));
+    function isValidHex(input) {
+      if (!input) return false;
+      const s = input.trim();
+      return /^#?[0-9a-fA-F]{6}$/.test(s) || /^#?[0-9a-fA-F]{3}$/.test(s);
     }
 
-    function generatePalette() {
+    function normalizeHex(input) {
+      let s = (input || '').trim();
+      if (!s) return '#000000';
+      if (s[0] !== '#') s = '#' + s;
+      if (/^#[0-9a-fA-F]{3}$/.test(s)) {
+        const r = s[1], g = s[2], b = s[3];
+        s = `#${r}${r}${g}${g}${b}${b}`;
+      }
+      return s.toUpperCase();
+    }
+
+    function hexToHsl(hex) {
+      hex = normalizeHex(hex).slice(1);
+      const r = parseInt(hex.substr(0,2),16) / 255;
+      const g = parseInt(hex.substr(2,2),16) / 255;
+      const b = parseInt(hex.substr(4,2),16) / 255;
+      const max = Math.max(r,g,b), min = Math.min(r,g,b);
+      let h, s, l = (max + min) / 2;
+      if (max === min) {
+        h = s = 0; // achromatic
+      } else {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        switch(max) {
+          case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+          case g: h = (b - r) / d + 2; break;
+          case b: h = (r - g) / d + 4; break;
+        }
+        h *= 60;
+      }
+      return { h: Math.round(h || 0), s: Math.round((s||0)*100), l: Math.round(l*100) };
+    }
+
+    // Paletin merkez rengi baz alınarak tonlar üret (orta = base)
+    function createPaletteFromBase(baseHex, count) {
+      const base = hexToHsl(baseHex);
+      const center = Math.floor(count / 2);
+      // sınırlar içinde kalacak adım seçimi
+      let step = Math.max(10, Math.floor(Math.min(base.l - 12, 88 - base.l) / 2));
+      if (!isFinite(step) || step <= 0) step = 12;
+      const colors = [];
+      for (let i = 0; i < count; i++) {
+        const offset = (i - center) * step;
+        const l = clamp(base.l + offset, 12, 88);
+        colors.push(hslToHex(base.h, base.s, l));
+      }
+      colors[center] = normalizeHex(baseHex); // tam merkez, girilen hex
+      return colors;
+    }
+
+    function createRandomBaseHex() {
+      const isGray = Math.random() < 0.25;
+      const h = isGray ? 0 : Math.floor(Math.random() * 360);
+      const s = isGray ? 0 : 60 + Math.floor(Math.random() * 20);
+      const l = 50 + Math.floor(Math.random() * 10); // 50..59 arası orta ton
+      return hslToHex(h, s, l);
+    }
+
+    let paletteHistory = [];
+
+    function generatePalette(baseHex) {
       const palettes = document.querySelectorAll(".palette");
       const count = palettes.length;
 
+      // Base hex belirle
+      let base = baseHex && isValidHex(baseHex) ? normalizeHex(baseHex) : createRandomBaseHex();
+
+      // Benzersiz palet bul (geçmişe göre)
       let attempts = 0;
       let colors = [];
       let key = '';
       const MAX_ATTEMPTS = 100;
       do {
-        colors = createPaletteColors(count);
+        colors = createPaletteFromBase(base, count);
         key = colors.join(',');
+        if (paletteHistory.includes(key)) {
+          // Çakıştıysa yeni bir base üret ve tekrar dene
+          base = createRandomBaseHex();
+        }
         attempts++;
       } while (paletteHistory.includes(key) && attempts < MAX_ATTEMPTS);
 
@@ -138,8 +204,32 @@
           paletteHistory = [];
         }
       }
+
+      // Input değerini güncelle
+      const input = document.getElementById('base-hex-input');
+      if (input) input.value = colors[Math.floor(count/2)];
     }
 
+    // Input etkileşimi: geçerli hex olduğunda paleti güncelle
+    const baseHexInput = document.getElementById('base-hex-input');
+    let inputDebounce;
+    if (baseHexInput) {
+      baseHexInput.addEventListener('input', () => {
+        clearTimeout(inputDebounce);
+        inputDebounce = setTimeout(() => {
+          const v = baseHexInput.value;
+          if (isValidHex(v)) {
+            generatePalette(v);
+          }
+        }, 250);
+      });
+      baseHexInput.addEventListener('change', () => {
+        const v = baseHexInput.value;
+        if (isValidHex(v)) generatePalette(v);
+      });
+    }
+
+    // İlk yüklemede rastgele bir palet
     generatePalette();
   </script>
 </body>
